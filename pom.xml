@@ -6,27 +6,27 @@
   <artifactId>my-app-starter</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>spring-boot-starter-logging</name>
+  <name>my-app-starter</name>
   <url>http://maven.apache.org</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
+    <spring.version>3.4.0</spring.version>
   </properties>
 
   <dependencies>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
-      <version>3.4.0</version>
+      <version>${spring.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-aop</artifactId>
-      <version>3.4.0</version>
+      <version>${spring.version}</version>
     </dependency>
   </dependencies>
 
