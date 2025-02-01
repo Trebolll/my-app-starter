@@ -1,0 +1,93 @@
+package com.example.config.aspect;
+
+import com.example.config.entity.RequestLog;
+import com.example.config.entity.ResponseLog;
+import com.example.config.service.RequestService;
+import com.example.config.service.ResponseService;
+
+import lombok.RequiredArgsConstructor;
+import org.aspectj.lang.JoinPoint;
+
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.UUID;
+
+@Aspect
+@RequiredArgsConstructor
+public class AuditAspect {
+    private static final String requestLogAttribute = "requestLogId";
+    private final RequestService requestLogService;
+    private final ResponseService responseLogService;
+
+    @Before("@annotation(com.example.config.annotation.AuditExecution)")
+    public void auditExecutionRequest(JoinPoint joinPoint) {
+        var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        var methodName = joinPoint.getSignature().getName();
+        var requestLog = RequestLog.builder()
+                .value(request.getParameter(request.getParameterNames().nextElement()))
+                .requestMethod(methodName)
+                .httpMethod(request.getMethod())
+                .requestUrl(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
+        requestLogService.save(requestLog);
+
+        request.setAttribute(requestLogAttribute, requestLog.getId());
+    }
+
+    @AfterReturning(pointcut = "@annotation(com.example.config.annotation.AuditExecution)", returning = "result")
+    public void logAfterMethod(Object result) {
+        int statusCode;
+        if (result instanceof ResponseEntity<?> responseEntity) {
+            statusCode = responseEntity.getStatusCode().value();
+            var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
+            var requestLog = requestLogService.findById(requestLogId).orElse(null);
+
+            var responseLog = ResponseLog.builder()
+                    .value(request.getParameter(request.getParameterNames().nextElement()))
+                    .status(statusCode)
+                    .requestLog(requestLog)
+                    .timestamp(LocalDateTime.now())
+                    .responseBody(result.toString())
+                    .build();
+            responseLogService.save(responseLog);
+        }
+    }
+
+    @AfterThrowing(pointcut = "@annotation(com.example.config.annotation.AuditExecution)", throwing = "ex")
+    public void logAfterMethodThrowing(Throwable ex) {
+        var statusCode = (ex instanceof ResponseStatusException responseStatusException)
+                ? responseStatusException.getStatusCode().value()
+                : (ex instanceof NullPointerException)
+                ? HttpStatus.BAD_REQUEST.value()
+                : (ex != null)
+                ? HttpStatus.BAD_REQUEST.value()
+                : HttpStatus.INTERNAL_SERVER_ERROR.value();
+
+        var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
+        var requestLog = requestLogService.findById(requestLogId).orElse(null);
+
+        var responseLog = ResponseLog.builder()
+                .value(request.getParameter(request.getParameterNames().nextElement()))
+                .status(statusCode)
+                .timestamp(LocalDateTime.now())
+                .requestLog(requestLog)
+                .responseBody(Objects.requireNonNull(ex).getMessage())
+                .build();
+        responseLogService.save(responseLog);
+    }
+}
+
+
