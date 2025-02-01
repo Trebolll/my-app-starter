@@ -1,1 +1,1 @@
-org.springframework.context.annotation.Configuration=com.example.config.LoggingAspectAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.example.config.configuration.AutoConfiguration
