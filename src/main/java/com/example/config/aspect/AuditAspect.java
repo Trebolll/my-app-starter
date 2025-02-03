@@ -67,6 +67,7 @@ public class AuditAspect {
         }
     }
 
+    @SneakyThrows
     @AfterThrowing(pointcut = "@annotation(com.example.config.annotation.AuditExecution)", throwing = "ex")
     public void logAfterMethodThrowing(Throwable ex) {
         var statusCode = (ex instanceof ResponseStatusException responseStatusException)
@@ -84,7 +85,7 @@ public class AuditAspect {
                 .status(statusCode)
                 .timestamp(LocalDateTime.now())
                 .requestLog(requestLog)
-                .responseBody(Objects.requireNonNull(ex).getMessage())
+                .responseBody(objectMapper.writeValueAsString(Objects.requireNonNull(ex).getStackTrace()))
                 .build();
         responseLogService.save(responseLog);
     }
