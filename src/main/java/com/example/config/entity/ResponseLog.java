@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Builder
@@ -44,5 +45,23 @@ public class ResponseLog {
     @PrePersist
     protected void onCreate() {
         timestamp = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ResponseLog that = (ResponseLog) o;
+        return Objects.equals(id, that.id)
+                && Objects.equals(value, that.value)
+                && Objects.equals(responseBody, that.responseBody)
+                && Objects.equals(timestamp, that.timestamp)
+                && Objects.equals(status, that.status)
+                && Objects.equals(requestLog, that.requestLog);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, value, responseBody, timestamp, status, requestLog);
     }
 }
