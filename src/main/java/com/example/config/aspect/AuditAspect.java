@@ -1,11 +1,13 @@
 package com.example.config.aspect;
 
-import com.example.config.entity.RequestLog;
-import com.example.config.entity.ResponseLog;
+import com.example.config.dto.RequestLogDto;
+import com.example.config.dto.ResponseLogDto;
 import com.example.config.service.RequestService;
 import com.example.config.service.ResponseService;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.aspectj.lang.JoinPoint;
 
 import org.aspectj.lang.annotation.AfterReturning;
@@ -28,40 +30,40 @@ public class AuditAspect {
     private static final String requestLogAttribute = "requestLogId";
     private final RequestService requestLogService;
     private final ResponseService responseLogService;
+    private final ObjectMapper objectMapper;
 
     @Before("@annotation(com.example.config.annotation.AuditExecution)")
     public void auditExecutionRequest(JoinPoint joinPoint) {
         var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        var methodName = joinPoint.getSignature().getName();
-        var requestLog = RequestLog.builder()
+        var requestLogDto =  RequestLogDto.builder()
+                .id(null)
                 .value(request.getParameter(request.getParameterNames().nextElement()))
-                .requestMethod(methodName)
+                .requestMethod(joinPoint.getSignature().getName())
                 .httpMethod(request.getMethod())
                 .requestUrl(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
                 .build();
-        requestLogService.save(requestLog);
-
+        var requestLog = requestLogService.save(requestLogDto);
         request.setAttribute(requestLogAttribute, requestLog.getId());
     }
 
+    @SneakyThrows
     @AfterReturning(pointcut = "@annotation(com.example.config.annotation.AuditExecution)", returning = "result")
     public void logAfterMethod(Object result) {
         int statusCode;
         if (result instanceof ResponseEntity<?> responseEntity) {
             statusCode = responseEntity.getStatusCode().value();
             var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
+            var requestLogId = (UUID) request.getAttribute(requestLogAttribute);
             var requestLog = requestLogService.findById(requestLogId).orElse(null);
-
-            var responseLog = ResponseLog.builder()
+            var responseLogDto = ResponseLogDto.builder()
                     .value(request.getParameter(request.getParameterNames().nextElement()))
                     .status(statusCode)
                     .requestLog(requestLog)
                     .timestamp(LocalDateTime.now())
-                    .responseBody(result.toString())
+                    .responseBody(objectMapper.writeValueAsString(result))
                     .build();
-            responseLogService.save(responseLog);
+            responseLogService.save(responseLogDto);
         }
     }
 
@@ -74,12 +76,10 @@ public class AuditAspect {
                 : (ex != null)
                 ? HttpStatus.BAD_REQUEST.value()
                 : HttpStatus.INTERNAL_SERVER_ERROR.value();
-
         var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
+        var requestLogId = (UUID) request.getAttribute(requestLogAttribute);
         var requestLog = requestLogService.findById(requestLogId).orElse(null);
-
-        var responseLog = ResponseLog.builder()
+        var responseLog = ResponseLogDto.builder()
                 .value(request.getParameter(request.getParameterNames().nextElement()))
                 .status(statusCode)
                 .timestamp(LocalDateTime.now())

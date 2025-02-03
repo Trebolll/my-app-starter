@@ -32,7 +32,7 @@ public class ResponseLog {
     private UUID id;
     @Column(name = "value")
     private String value;
-    @Column(name = "responseBody")
+    @Column(name = "responseBody", columnDefinition = "TEXT")
     private String responseBody;
     @Column(name = "timestamp")
     private LocalDateTime timestamp;

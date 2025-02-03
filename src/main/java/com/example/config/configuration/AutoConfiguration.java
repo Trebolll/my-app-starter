@@ -4,6 +4,8 @@ import com.example.config.aspect.AuditAspect;
 import com.example.config.aspect.LoggingAspect;
 import com.example.config.service.RequestService;
 import com.example.config.service.ResponseService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -18,14 +20,15 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class AutoConfiguration {
 
     @Bean
+    @ConditionalOnProperty(name = "com.example.config.log-execution.enabled", havingValue = "true", matchIfMissing = true)
     public LoggingAspect loggingAspect() {
         return new LoggingAspect();
     }
 
     @Bean
-    public AuditAspect auditAspect(RequestService requestService, ResponseService responseService) {
-        return new AuditAspect(requestService, responseService);
+    @ConditionalOnProperty(name = "com.example.config.audit-execution.enabled", havingValue = "true", matchIfMissing = true)
+    public AuditAspect auditAspect(RequestService requestService, ResponseService responseService, ObjectMapper objectMapper) {
+        return new AuditAspect(requestService, responseService,objectMapper);
     }
-
 }
 
