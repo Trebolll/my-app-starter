@@ -28,7 +28,7 @@ public class AutoConfiguration {
     @Bean
     @ConditionalOnProperty(name = "com.example.config.audit-execution.enabled", havingValue = "true", matchIfMissing = true)
     public AuditAspect auditAspect(RequestService requestService, ResponseService responseService, ObjectMapper objectMapper) {
-        return new AuditAspect(requestService, responseService,objectMapper);
+        return new AuditAspect(requestService, responseService, objectMapper);
     }
 }
 

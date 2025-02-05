@@ -11,17 +11,18 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 @Getter
 @Setter
 @Entity
@@ -47,21 +48,4 @@ public class ResponseLog {
         timestamp = LocalDateTime.now();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ResponseLog that = (ResponseLog) o;
-        return Objects.equals(id, that.id)
-                && Objects.equals(value, that.value)
-                && Objects.equals(responseBody, that.responseBody)
-                && Objects.equals(timestamp, that.timestamp)
-                && Objects.equals(status, that.status)
-                && Objects.equals(requestLog, that.requestLog);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, value, responseBody, timestamp, status, requestLog);
-    }
 }

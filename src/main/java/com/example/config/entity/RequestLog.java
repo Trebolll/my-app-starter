@@ -9,12 +9,12 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
 
 @Builder
@@ -22,6 +22,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode
 @Entity
 @Table(name = "request_log")
 public class RequestLog {
@@ -45,21 +46,4 @@ public class RequestLog {
         timestamp = LocalDateTime.now();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RequestLog that = (RequestLog) o;
-        return Objects.equals(id, that.id)
-                && Objects.equals(value, that.value)
-                && Objects.equals(requestMethod, that.requestMethod)
-                && Objects.equals(httpMethod, that.httpMethod)
-                && Objects.equals(requestUrl, that.requestUrl)
-                && Objects.equals(timestamp, that.timestamp);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, value, requestMethod, httpMethod, requestUrl, timestamp);
-    }
 }
