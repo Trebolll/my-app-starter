@@ -34,14 +34,14 @@ public class ResponseLog {
     private UUID id;
     @Column(name = "value")
     private String value;
-    @Column(name = "responseBody", columnDefinition = "TEXT")
+    @Column(name = "response_body", columnDefinition = "TEXT")
     private String responseBody;
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
     @Column(name = "status")
     private Integer status;
     @ManyToOne
-    @JoinColumn(name = "requestLogId")
+    @JoinColumn(name = "request_log_id")
     private RequestLog requestLog;
     @PrePersist
     protected void onCreate() {

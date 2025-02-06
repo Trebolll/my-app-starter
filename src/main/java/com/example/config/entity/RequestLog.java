@@ -32,11 +32,11 @@ public class RequestLog {
     private UUID id;
     @Column(name = "value")
     private String value;
-    @Column(name = "requestMethod")
+    @Column(name = "request_method")
     private String requestMethod;
-    @Column(name = "httpMethod")
+    @Column(name = "http_method")
     private String httpMethod;
-    @Column(name = "requestUrl")
+    @Column(name = "request_url")
     private String requestUrl;
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
