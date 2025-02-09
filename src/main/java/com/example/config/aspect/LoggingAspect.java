@@ -1,6 +1,6 @@
 package com.example.config.aspect;
 
-import com.example.config.annotation.LogExecution;
+import com.example.config.annotation.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
@@ -11,19 +11,19 @@ import org.aspectj.lang.annotation.Before;
 @Aspect
 @Slf4j
 public class LoggingAspect {
-    @Before("@annotation(com.example.config.annotation.LogExecution)")
+    @Before("@annotation(com.example.config.annotation.Log)")
     public void logBeforeMethod(JoinPoint joinPoint) {
         log.info("Executing method: {}", joinPoint.getSignature().getName());
     }
-    @AfterReturning(pointcut = "@annotation(com.example.config.annotation.LogExecution)", returning = "result")
+    @AfterReturning(pointcut = "@annotation(com.example.config.annotation.Log)", returning = "result")
     public void logAfterMethod(JoinPoint joinPoint, Object result) {
         log.info("Method executed: {}, Return value: {}", joinPoint.getSignature().getName(), result);
     }
 
-    @AfterThrowing(pointcut = "@annotation(logExecution)", throwing = "ex")
-    public void logAfterThrowing(JoinPoint joinPoint, LogExecution logExecution, Throwable ex) {
+    @AfterThrowing(pointcut = "@annotation(log)", throwing = "ex")
+    public void logAfterThrowing(JoinPoint joinPoint, Log log, Throwable ex) {
         if (ex instanceof RuntimeException) {
-            log.error("Exception in method: {} with message: {}", joinPoint.getSignature().toShortString(), ex.getMessage());
+            LoggingAspect.log.error("Exception in method: {} with message: {}", joinPoint.getSignature().toShortString(), ex.getMessage());
         }
     }
 }

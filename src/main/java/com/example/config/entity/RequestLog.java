@@ -9,10 +9,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -20,9 +18,7 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 @Table(name = "request_log")
 public class RequestLog {
@@ -40,10 +36,8 @@ public class RequestLog {
     private String requestUrl;
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
-
     @PrePersist
     protected void onCreate() {
         timestamp = LocalDateTime.now();
     }
-
 }

@@ -12,21 +12,18 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-
 @Configuration
 @EnableJpaRepositories(basePackages = "com.example.config.repository")
 @ComponentScan(basePackages = "com.example")
 @EntityScan(basePackages = "com.example.config.entity")
 public class AutoConfiguration {
-
     @Bean
-    @ConditionalOnProperty(name = "com.example.config.log-execution.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "com.example.config.log", havingValue = "true", matchIfMissing = false)
     public LoggingAspect loggingAspect() {
         return new LoggingAspect();
     }
-
     @Bean
-    @ConditionalOnProperty(name = "com.example.config.audit-execution.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "com.example.config.audit", havingValue = "true", matchIfMissing = false)
     public AuditAspect auditAspect(RequestService requestService, ResponseService responseService, ObjectMapper objectMapper) {
         return new AuditAspect(requestService, responseService, objectMapper);
     }

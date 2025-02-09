@@ -14,6 +14,7 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -32,7 +33,7 @@ public class AuditAspect {
     private final ResponseService responseLogService;
     private final ObjectMapper objectMapper;
 
-    @Before("@annotation(com.example.config.annotation.AuditExecution)")
+    @Before("@annotation(com.example.config.annotation.Audit)")
     public void auditExecutionRequest(JoinPoint joinPoint) {
         var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         var requestLogDto =  RequestLogDto.builder()
@@ -48,7 +49,7 @@ public class AuditAspect {
     }
 
     @SneakyThrows
-    @AfterReturning(pointcut = "@annotation(com.example.config.annotation.AuditExecution)", returning = "result")
+    @AfterReturning(pointcut = "@annotation(com.example.config.annotation.Audit)", returning = "result")
     public void logAfterMethod(Object result) {
         int statusCode;
         if (result instanceof ResponseEntity<?> responseEntity) {
@@ -68,7 +69,7 @@ public class AuditAspect {
     }
 
     @SneakyThrows
-    @AfterThrowing(pointcut = "@annotation(com.example.config.annotation.AuditExecution)", throwing = "ex")
+    @AfterThrowing(pointcut = "@annotation(com.example.config.annotation.Audit)", throwing = "ex")
     public void logAfterMethodThrowing(Throwable ex) {
         var statusCode = (ex instanceof ResponseStatusException responseStatusException)
                 ? responseStatusException.getStatusCode().value()
