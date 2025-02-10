@@ -14,7 +14,6 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -25,15 +24,17 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
+import static com.example.config.util.AspectConstant.audit;
+import static com.example.config.util.AspectConstant.requestLogAttribute;
+
 @Aspect
 @RequiredArgsConstructor
 public class AuditAspect {
-    private static final String requestLogAttribute = "requestLogId";
     private final RequestService requestLogService;
     private final ResponseService responseLogService;
     private final ObjectMapper objectMapper;
 
-    @Before("@annotation(com.example.config.annotation.Audit)")
+    @Before(audit)
     public void auditExecutionRequest(JoinPoint joinPoint) {
         var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         var requestLogDto =  RequestLogDto.builder()
@@ -49,7 +50,7 @@ public class AuditAspect {
     }
 
     @SneakyThrows
-    @AfterReturning(pointcut = "@annotation(com.example.config.annotation.Audit)", returning = "result")
+    @AfterReturning(pointcut = audit, returning = "result")
     public void logAfterMethod(Object result) {
         int statusCode;
         if (result instanceof ResponseEntity<?> responseEntity) {
@@ -69,7 +70,7 @@ public class AuditAspect {
     }
 
     @SneakyThrows
-    @AfterThrowing(pointcut = "@annotation(com.example.config.annotation.Audit)", throwing = "ex")
+    @AfterThrowing(pointcut = audit, throwing = "ex")
     public void logAfterMethodThrowing(Throwable ex) {
         var statusCode = (ex instanceof ResponseStatusException responseStatusException)
                 ? responseStatusException.getStatusCode().value()

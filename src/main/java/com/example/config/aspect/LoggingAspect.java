@@ -8,22 +8,28 @@ import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 
+import java.util.Optional;
+
+import static com.example.config.util.AspectConstant.logs;
+
 @Aspect
 @Slf4j
 public class LoggingAspect {
-    @Before("@annotation(com.example.config.annotation.Log)")
+    @Before(logs)
     public void logBeforeMethod(JoinPoint joinPoint) {
-        log.info("Executing method: {}", joinPoint.getSignature().getName());
-    }
-    @AfterReturning(pointcut = "@annotation(com.example.config.annotation.Log)", returning = "result")
-    public void logAfterMethod(JoinPoint joinPoint, Object result) {
-        log.info("Method executed: {}, Return value: {}", joinPoint.getSignature().getName(), result);
+        log.info("Executing: {}", joinPoint.getSignature().getName());
     }
 
-    @AfterThrowing(pointcut = "@annotation(log)", throwing = "ex")
-    public void logAfterThrowing(JoinPoint joinPoint, Log log, Throwable ex) {
-        if (ex instanceof RuntimeException) {
-            LoggingAspect.log.error("Exception in method: {} with message: {}", joinPoint.getSignature().toShortString(), ex.getMessage());
-        }
+    @AfterReturning(pointcut = logs, returning = "result")
+    public void logAfterMethod(JoinPoint joinPoint, Object result) {
+        log.info("Executed: {}, Return: {}", joinPoint.getSignature().getName(), result);
+    }
+
+    @AfterThrowing(pointcut = logs, throwing = "ex")
+    public void logAfterThrowing(JoinPoint joinPoint, Throwable ex) {
+        Optional.of(ex)
+                .filter(RuntimeException.class::isInstance)
+                .map(RuntimeException.class::cast)
+                .ifPresent(e -> log.error("Exception in {}: {}", joinPoint.getSignature().toShortString(), e.getMessage()));
     }
 }
