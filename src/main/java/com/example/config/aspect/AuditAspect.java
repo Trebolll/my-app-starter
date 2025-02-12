@@ -7,6 +7,7 @@ import com.example.config.service.RequestService;
 import com.example.config.service.ResponseService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.aspectj.lang.JoinPoint;
@@ -62,18 +63,22 @@ public class AuditAspect {
     @SneakyThrows
     @AfterReturning(pointcut = audit, returning = "result")
     public void logAfterMethod(Object result) {
-        int statusCode;
-        if (result instanceof ResponseEntity<?> responseEntity) {
-            statusCode = responseEntity.getStatusCode().value();
-            var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            var requestLogId = (UUID) request.getAttribute(requestLogAttribute);
-            var requestLog = requestLogService.findById(requestLogId).orElse(null);
-            var responseLogDto = ResponseLogDto.builder()
-                    .value(request.getParameter(request.getParameterNames().nextElement()))
+        Integer statusCode = (result instanceof ResponseEntity<?> responseEntity) ? responseEntity.getStatusCode().value() : 0;
+        var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (requestAttributes != null) {
+            ServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute) ;
+            RequestLog requestLog = (requestLogId != null) ? requestLogService.findById(requestLogId).orElse(null) : null;
+            ResponseLogDto responseLogDto = ResponseLogDto.builder()
+                    .value(Optional.of(request.getParameterNames())
+                            .filter(Enumeration::hasMoreElements)
+                            .map(Enumeration::nextElement)
+                            .map(request::getParameter)
+                            .orElse(null))
                     .status(statusCode)
                     .requestLog(requestLog)
                     .timestamp(LocalDateTime.now())
-                    .responseBody(objectMapper.writeValueAsString(result))
+                    .responseBody(objectMapper.writeValueAsString(Objects.requireNonNull(result)))
                     .build();
             responseLogService.save(responseLogDto);
         }
@@ -82,18 +87,18 @@ public class AuditAspect {
     @SneakyThrows
     @AfterThrowing(pointcut = audit, throwing = "ex")
     public void logAfterMethodThrowing(Throwable ex) {
-        var statusCode = (ex instanceof ResponseStatusException responseStatusException)
-                ? responseStatusException.getStatusCode().value()
-                : (ex instanceof NullPointerException)
-                ? HttpStatus.BAD_REQUEST.value()
-                : (ex != null)
-                ? HttpStatus.BAD_REQUEST.value()
-                : HttpStatus.INTERNAL_SERVER_ERROR.value();
-        var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        var requestLogId = (UUID) request.getAttribute(requestLogAttribute);
-        var requestLog = requestLogService.findById(requestLogId).orElse(null);
-        var responseLog = ResponseLogDto.builder()
-                .value(request.getParameter(request.getParameterNames().nextElement()))
+        Integer statusCode = Optional.ofNullable(ex)
+                .map(e -> (e instanceof ResponseStatusException rse) ? rse.getStatusCode().value() : HttpStatus.BAD_REQUEST.value())
+                .orElse(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        ServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
+        RequestLog requestLog = (requestLogId != null) ? requestLogService.findById(requestLogId).orElse(null) : null;
+        ResponseLogDto responseLog = ResponseLogDto.builder()
+                .value(Optional.of(request.getParameterNames())
+                        .filter(Enumeration::hasMoreElements)
+                        .map(Enumeration::nextElement)
+                        .map(request::getParameter)
+                        .orElse(null))
                 .status(statusCode)
                 .timestamp(LocalDateTime.now())
                 .requestLog(requestLog)
