@@ -2,6 +2,7 @@ package com.example.config.aspect;
 
 import com.example.config.dto.RequestLogDto;
 import com.example.config.dto.ResponseLogDto;
+import com.example.config.entity.RequestLog;
 import com.example.config.service.RequestService;
 import com.example.config.service.ResponseService;
 
@@ -21,7 +22,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Enumeration;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.example.config.util.AspectConstant.audit;
@@ -36,17 +39,24 @@ public class AuditAspect {
 
     @Before(audit)
     public void auditExecutionRequest(JoinPoint joinPoint) {
-        var request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        var requestLogDto =  RequestLogDto.builder()
-                .id(null)
-                .value(request.getParameter(request.getParameterNames().nextElement()))
-                .requestMethod(joinPoint.getSignature().getName())
-                .httpMethod(request.getMethod())
-                .requestUrl(request.getRequestURI())
-                .timestamp(LocalDateTime.now())
-                .build();
-        var requestLog = requestLogService.save(requestLogDto);
-        request.setAttribute(requestLogAttribute, requestLog.getId());
+        Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+                .map(ServletRequestAttributes.class::cast)
+                .map(ServletRequestAttributes::getRequest)
+                .ifPresent(request -> {
+                    RequestLogDto requestLogDto = RequestLogDto.builder()
+                            .id(null)
+                            .value(Optional.ofNullable(request.getParameterNames())
+                                    .filter(Enumeration::hasMoreElements)
+                                    .map(parameterNames -> request.getParameter(parameterNames.nextElement()))
+                                    .orElse(null))
+                            .requestMethod(joinPoint.getSignature().getName())
+                            .httpMethod(request.getMethod())
+                            .requestUrl(request.getRequestURI())
+                            .timestamp(LocalDateTime.now())
+                            .build();
+                    RequestLog requestLog = requestLogService.save(requestLogDto);
+                    request.setAttribute(requestLogAttribute, requestLog.getId());
+                });
     }
 
     @SneakyThrows
