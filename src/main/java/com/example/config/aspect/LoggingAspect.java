@@ -1,6 +1,5 @@
 package com.example.config.aspect;
 
-import com.example.config.annotation.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;

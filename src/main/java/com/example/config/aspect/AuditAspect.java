@@ -14,6 +14,7 @@ import org.aspectj.lang.JoinPoint;
 
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
+
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,10 +46,7 @@ public class AuditAspect {
                 .ifPresent(request -> {
                     RequestLogDto requestLogDto = RequestLogDto.builder()
                             .id(null)
-                            .value(Optional.ofNullable(request.getParameterNames())
-                                    .filter(Enumeration::hasMoreElements)
-                                    .map(parameterNames -> request.getParameter(parameterNames.nextElement()))
-                                    .orElse(null))
+                            .value(joinPoint.getArgs()[0].toString())
                             .requestMethod(joinPoint.getSignature().getName())
                             .httpMethod(request.getMethod())
                             .requestUrl(request.getRequestURI())
@@ -62,7 +59,7 @@ public class AuditAspect {
 
     @SneakyThrows
     @AfterReturning(pointcut = audit, returning = "result")
-    public void logAfterMethod(Object result) {
+    public void logAfterMethod(JoinPoint joinPoint, Object result) {
         Integer statusCode = (result instanceof ResponseEntity<?> responseEntity) ? responseEntity.getStatusCode().value() : 0;
         var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (requestAttributes != null) {
@@ -70,11 +67,7 @@ public class AuditAspect {
             UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute) ;
             RequestLog requestLog = (requestLogId != null) ? requestLogService.findById(requestLogId).orElse(null) : null;
             ResponseLogDto responseLogDto = ResponseLogDto.builder()
-                    .value(Optional.of(request.getParameterNames())
-                            .filter(Enumeration::hasMoreElements)
-                            .map(Enumeration::nextElement)
-                            .map(request::getParameter)
-                            .orElse(null))
+                    .value(joinPoint.getArgs()[0].toString())
                     .status(statusCode)
                     .requestLog(requestLog)
                     .timestamp(LocalDateTime.now())
@@ -86,7 +79,7 @@ public class AuditAspect {
 
     @SneakyThrows
     @AfterThrowing(pointcut = audit, throwing = "ex")
-    public void logAfterMethodThrowing(Throwable ex) {
+    public void logAfterMethodThrowing(JoinPoint joinPoint, Throwable ex) {
         Integer statusCode = Optional.ofNullable(ex)
                 .map(e -> (e instanceof ResponseStatusException rse) ? rse.getStatusCode().value() : HttpStatus.BAD_REQUEST.value())
                 .orElse(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -94,15 +87,11 @@ public class AuditAspect {
         UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
         RequestLog requestLog = (requestLogId != null) ? requestLogService.findById(requestLogId).orElse(null) : null;
         ResponseLogDto responseLog = ResponseLogDto.builder()
-                .value(Optional.of(request.getParameterNames())
-                        .filter(Enumeration::hasMoreElements)
-                        .map(Enumeration::nextElement)
-                        .map(request::getParameter)
-                        .orElse(null))
+                .value(joinPoint.getArgs()[0].toString())
                 .status(statusCode)
                 .timestamp(LocalDateTime.now())
                 .requestLog(requestLog)
-                .responseBody(objectMapper.writeValueAsString(Objects.requireNonNull(ex).getStackTrace()))
+                .responseBody(objectMapper.writeValueAsString(Objects.requireNonNull(ex).getMessage()))
                 .build();
         responseLogService.save(responseLog);
     }
