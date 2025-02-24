@@ -1,5 +1,7 @@
 package com.example.config.aspect;
 
+import jakarta.annotation.PreDestroy;
+import jakarta.persistence.PrePersist;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
@@ -30,5 +32,13 @@ public class LoggingAspect {
                 .filter(RuntimeException.class::isInstance)
                 .map(RuntimeException.class::cast)
                 .ifPresent(e -> log.error("Exception in {}: {}", joinPoint.getSignature().toShortString(), e.getMessage()));
+    }
+
+    private void init() {
+        log.info("initLogAspect");
+    }
+
+    private void destroy() {
+        log.info("destroyLogAspect");
     }
 }

@@ -43,5 +43,4 @@ public class ResponseLog {
     protected void onCreate() {
         timestamp = LocalDateTime.now();
     }
-
 }

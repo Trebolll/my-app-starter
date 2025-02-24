@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 
 import org.aspectj.lang.annotation.AfterReturning;
@@ -32,6 +33,7 @@ import static com.example.config.util.AspectConstant.audit;
 import static com.example.config.util.AspectConstant.requestLogAttribute;
 
 @Aspect
+@Slf4j
 @RequiredArgsConstructor
 public class AuditAspect {
     private final RequestService requestLogService;
@@ -64,7 +66,7 @@ public class AuditAspect {
         var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (requestAttributes != null) {
             ServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute) ;
+            UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
             RequestLog requestLog = (requestLogId != null) ? requestLogService.findById(requestLogId).orElse(null) : null;
             ResponseLogDto responseLogDto = ResponseLogDto.builder()
                     .value(joinPoint.getArgs()[0].toString())
@@ -94,6 +96,14 @@ public class AuditAspect {
                 .responseBody(objectMapper.writeValueAsString(Objects.requireNonNull(ex).getMessage()))
                 .build();
         responseLogService.save(responseLog);
+    }
+
+    private void init() {
+        log.info("initAuditAspect");
+    }
+
+    private void destroy() {
+        log.info("destroyAuditAspect");
     }
 }
 
