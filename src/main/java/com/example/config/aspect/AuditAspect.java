@@ -46,15 +46,14 @@ public class AuditAspect {
                 .map(ServletRequestAttributes.class::cast)
                 .map(ServletRequestAttributes::getRequest)
                 .ifPresent(request -> {
-                    RequestLogDto requestLogDto = RequestLogDto.builder()
+                    RequestLog requestLog = requestLogService.save(RequestLogDto.builder()
                             .id(null)
                             .value(joinPoint.getArgs()[0].toString())
                             .requestMethod(joinPoint.getSignature().getName())
                             .httpMethod(request.getMethod())
                             .requestUrl(request.getRequestURI())
                             .timestamp(LocalDateTime.now())
-                            .build();
-                    RequestLog requestLog = requestLogService.save(requestLogDto);
+                            .build());
                     request.setAttribute(requestLogAttribute, requestLog.getId());
                 });
     }
@@ -66,16 +65,13 @@ public class AuditAspect {
         var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (requestAttributes != null) {
             ServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
-            RequestLog requestLog = (requestLogId != null) ? requestLogService.findById(requestLogId).orElse(null) : null;
-            ResponseLogDto responseLogDto = ResponseLogDto.builder()
+            responseLogService.save(ResponseLogDto.builder()
                     .value(joinPoint.getArgs()[0].toString())
                     .status(statusCode)
-                    .requestLog(requestLog)
+                    .requestLog(requestLogService.findById((UUID) request.getAttribute(requestLogAttribute)).orElse(null))
                     .timestamp(LocalDateTime.now())
                     .responseBody(objectMapper.writeValueAsString(Objects.requireNonNull(result)))
-                    .build();
-            responseLogService.save(responseLogDto);
+                    .build());
         }
     }
 
@@ -86,16 +82,13 @@ public class AuditAspect {
                 .map(e -> (e instanceof ResponseStatusException rse) ? rse.getStatusCode().value() : HttpStatus.BAD_REQUEST.value())
                 .orElse(HttpStatus.INTERNAL_SERVER_ERROR.value());
         ServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        UUID requestLogId = (UUID) request.getAttribute(requestLogAttribute);
-        RequestLog requestLog = (requestLogId != null) ? requestLogService.findById(requestLogId).orElse(null) : null;
-        ResponseLogDto responseLog = ResponseLogDto.builder()
+        responseLogService.save(ResponseLogDto.builder()
                 .value(joinPoint.getArgs()[0].toString())
                 .status(statusCode)
                 .timestamp(LocalDateTime.now())
-                .requestLog(requestLog)
+                .requestLog(requestLogService.findById((UUID) request.getAttribute(requestLogAttribute)).orElse(null))
                 .responseBody(objectMapper.writeValueAsString(Objects.requireNonNull(ex).getMessage()))
-                .build();
-        responseLogService.save(responseLog);
+                .build());
     }
 
     private void init() {

@@ -5,9 +5,6 @@ import com.example.config.aspect.LoggingAspect;
 import com.example.config.service.RequestService;
 import com.example.config.service.ResponseService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Resource;
-import jakarta.persistence.PrePersist;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
@@ -21,13 +18,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(basePackages = "com.example.config.entity")
 public class AutoConfiguration {
     @Bean(initMethod = "init", destroyMethod = "destroy")
-    @ConditionalOnProperty(name = "com.example.config.log", havingValue = "true", matchIfMissing = false)
+    @ConditionalOnProperty(name = "com.example.config.log", havingValue = "true")
     public LoggingAspect loggingAspect() {
         return new LoggingAspect();
     }
 
     @Bean(initMethod = "init", destroyMethod = "destroy")
-    @ConditionalOnProperty(name = "com.example.config.audit", havingValue = "true", matchIfMissing = false)
+    @ConditionalOnProperty(name = "com.example.config.audit", havingValue = "true")
     public AuditAspect auditAspect(RequestService requestService, ResponseService responseService, ObjectMapper objectMapper) {
         return new AuditAspect(requestService, responseService, objectMapper);
     }
